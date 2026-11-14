@@ -40,3 +40,9 @@ export async function auth(request, env) {
   } catch { return null; }
 }
 
+
+// Telegram foydalanuvchisining ko'rinadigan ismi
+export function nameOf(u) {
+  const last = u.last_name ? u.last_name[0] + "." : "";
+  return ([u.first_name, last].filter(Boolean).join(" ") || u.username || "Oʻyinchi").slice(0, 24);
+}
