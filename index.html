@@ -282,4 +282,100 @@ function practiceCard(){
 }
 function chScreen(){
   var c=S.ch,h='<div class="card stk"><div class="stk-n">🎯 Challenge!</div><div class="sub"><b>'+esc(c.nm)+'</b> sizni chaqirdi</div><div class="tiles" style="margin:14px 0">';
-  for(var i=0;i<N;i++)h+='<div class="t">'+T[
+  for(var i=0;i<N;i++)h+='<div class="t">'+T[i]+'</div>';
+  h+='</div><div class="row"><span>Uning natijasi</span><span>'+c.s+' ball</span></div><div class="row"><span>Vaqti</span><span>'+fmt(c.t)+'</span></div>';
+  h+='<div class="sub" style="margin:10px 0">Soʻz: <b>'+T+'</b>. Uni oʻtib keta olasizmi? Taymer «Qabul qilish» bosilganda ishga tushadi.</div>';
+  return h+'<button class="b" data-a="acc">Qabul qilish</button><button class="b g" data-a="home">Bekor qilish</button></div>'
+}
+function freeResult(){
+  var s=st(),rec=S.rec||{w:T,s:s.total,t:s.ms,k:s.ok,n:N*R},ch=S.ch,h='<div class="tiles">';
+  for(var m=0;m<N;m++){var z=(S.rs[m].w?1:0)+(S.rs[m+N].w?1:0)+(S.rs[m+2*N].w?1:0);h+='<div class="t '+(z===3?"ok":z===0?"no":"cur")+'">'+T[m]+'</div>'}
+  h+='</div>';
+  if(ch){var c=cmpCh(rec,ch),vs=rec.s+' ball <span>'+(c>0?'›':c<0?'‹':'=')+'</span> '+ch.s+' ball';
+    if(c>0)h+='<div class="card win"><div class="win-t">🎉 Tabriklaymiz!</div><div>Siz <b>'+esc(ch.nm)+'</b> natijasidan yaxshiroq natija koʻrsatdingiz!</div><div class="vs">'+vs+'</div></div>';
+    else if(c<0)h+='<div class="card lose"><div class="win-t">💪 Sal qoldi!</div><div><b>'+esc(ch.nm)+'</b> natijasini hali oʻtolmadingiz. Yana urinib koʻring!</div><div class="vs">'+vs+'</div></div>';
+    else h+='<div class="card lose"><div class="win-t">🤝 Durang!</div><div><b>'+esc(ch.nm)+'</b> bilan natijangiz bir xil.</div><div class="vs">'+vs+'</div></div>'}
+  h+='<div class="card"><div class="sc">'+s.total+' ball</div><div class="sub" style="text-align:center">Vaqt: '+fmt(s.ms)+' · Soʻz: '+T+'</div><div class="row"><span>Soʻzlar ('+s.ok+'/'+N*R+')</span><span>'+s.pts+'</span></div><div class="row"><span>Tezlik bonusi</span><span>+'+s.b+'</span></div>';
+  if(P.best)h+='<div class="row"><span>Erkin oʻyinda eng yaxshi</span><span>'+P.best.s+' ball</span></div>';
+  h+='<button class="b" data-a="sh">📨 Doʻstga challenge yuborish</button><button class="b g" data-a="fr">🎲 Yangi tasodifiy soʻz</button><button class="b g" data-a="rep">🔁 Shu soʻzni qayta oʻynash</button><button class="b g" data-a="home">🏠 Bosh sahifa</button></div>';
+  return h+lbCard()
+}
+var soundOn=ls("hft_sound")!==false,audioCtx=null;
+function tone(freq,duration,type,volume){
+  if(!soundOn)return;
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    if(!audioCtx)audioCtx=new AC();
+    if(audioCtx.state==="suspended")audioCtx.resume();
+    var o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;
+    o.type=type||"sine";o.frequency.setValueAtTime(freq,now);
+    g.gain.setValueAtTime(volume||0.035,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+duration);
+    o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+duration);
+  }catch(e){}
+}
+function sfx(kind){
+  if(kind==="tap")tone(520,.045,"sine",.018);
+  if(kind==="start"){tone(440,.08,"sine",.025);setTimeout(function(){tone(660,.1,"sine",.025)},85)}
+  if(kind==="good"){tone(660,.09,"sine",.035);setTimeout(function(){tone(880,.14,"sine",.035)},95)}
+  if(kind==="skip"){tone(260,.12,"triangle",.025)}
+  if(kind==="win"){[523,659,784,1047].forEach(function(f,i){setTimeout(function(){tone(f,.16,"sine",.04)},i*110)})}
+}
+function render(){
+var h='<div class="top"><div><h1>Harfigatop</h1><div class="sub">'+(MODE==="f"?"Erkin oʻyin":"Kunlik soʻz #"+DAY)+'</div></div><button class="sound-toggle" data-a="sound" id="soundBtn">'+(soundOn?'🔊 Ovoz yoqilgan':'🔇 Ovoz oʻchiq')+'</button></div>';
+if(MODE==="f"&&!S.t0){h+='</div>'+chScreen()}
+else if(!S.t0){h+='</div>'+streakCard()+'<div class="card"><b>Qoidalar</b><ol><li>Har kuni bitta inglizcha soʻz beriladi.</li><li>3 raund bor. 1-raundda kunlik soʻzning har bir harfi uchun shu harfdan <b>boshlanuvchi</b> soʻz yozasiz. 2-raundda shu harf soʻzda <b>ikkinchi</b>, 3-raundda <b>uchinchi</b> boʻlib kelishi kerak. Masalan, W harfi uchun: word, awake, tower.</li><li>Har soʻz: 10 ball + harflar soni. 7 daqiqadan oldin tugatsangiz, tezlik bonusi bor.</li><li>Taymer «Boshlash» bosilganda ishga tushadi va sahifani yopsangiz ham toʻxtamaydi.</li><li>Kuniga bir marta oʻynaladi.</li></ol><button class="b" data-a="go">Boshlash</button></div>'+practiceCard()+lbCard()}
+else if(!fin()){var i=S.rs.length,q=Math.floor(i/N),c=i%N;
+h+='<div class="tm" id="tm">'+fmt(Date.now()-S.t0)+'</div></div><div class="tiles">';
+for(var j=0;j<N;j++)h+='<div class="t '+(j<c?(S.rs[q*N+j].w?"ok":"no"):j===c?"cur":"")+'">'+T[j]+'</div>';
+h+='</div><p class="p">'+(q+1)+'-raund · '+(c+1)+'/'+N+': '+(q+1)+'-harfi <b>'+T[c]+'</b> boʻlgan soʻz</p><div class="en">';
+for(var k=0;k<Math.max(buf.length,1);k++)h+='<span class="'+(k===q?"h":"")+'">'+(buf[k]||"")+'</span>';
+h+='</div><div class="ms">'+msg+'</div><div class="kb">';
+["qwertyuiop","asdfghjkl","*zxcvbnm#"].forEach(function(r){h+='<div class="r">';r.split("").forEach(function(c){h+=c==="*"?'<button class="k wd en2" data-k="Enter">OK</button>':c==="#"?'<button class="k wd" data-k="Backspace">⌫</button>':'<button class="k" data-k="'+c+'">'+c+'</button>'});h+='</div>'});
+h+='</div><button class="b g" data-a="skip">Oʻtkazib yuborish (0 ball)</button>'+(MODE==="f"?'<button class="b g" data-a="quit">Oʻyindan chiqish</button>':'')}
+else if(MODE==="f"){h+='</div>'+freeResult()}
+else{var s=st(),tx=shareText();
+h+='</div><div class="tiles">';for(var m=0;m<N;m++){var z=(S.rs[m].w?1:0)+(S.rs[m+N].w?1:0)+(S.rs[m+2*N].w?1:0);h+='<div class="t '+(z===3?"ok":z===0?"no":"cur")+'">'+T[m]+'</div>'}
+h+='</div><div class="card"><div class="sc">'+s.total+' ball</div><div class="sub" style="text-align:center">Vaqt: '+fmt(s.ms)+'</div><div class="row"><span>Soʻzlar ('+s.ok+'/'+N*R+')</span><span>'+s.pts+'</span></div><div class="row"><span>Tezlik bonusi</span><span>+'+s.b+'</span></div><div class="row"><span>Seriya</span><span>'+myStreak()+' kun</span></div></div>';
+h+='<div class="card"><b>Natijani ulashish</b><pre>'+tx+'</pre><button class="b" data-a="cp" id="cp">Nusxa olish</button><a class="b g" target="_blank" rel="noopener" href="https://t.me/share/url?url='+encodeURIComponent(link())+'&text='+encodeURIComponent(tx)+'">Telegramda ulashish</a></div>';
+h+=practiceCard();h+=lbCard();h+='<div class="card"><div class="score-head"><b>Mening natijalarim</b><span class="best-pill">🏆 Eng yaxshi: '+bestScore(H)+' ball</span></div><div class="sc2"><table><thead><tr><th>#</th><th>Kun</th><th>Ball</th><th>Vaqt</th><th>Soʻz</th></tr></thead><tbody>';
+var ks=Object.keys(H).map(Number).sort(function(a,b){return b-a}).slice(0,7);
+ks.forEach(function(d,idx){var e=H[d];h+='<tr><td>'+(idx===0?'★':idx+1)+'</td><td>#'+d+'</td><td>'+e.s+'</td><td>'+fmt(e.t)+'</td><td>'+e.k+'/'+e.n+'</td></tr>'});
+h+='</tbody></table></div><div class="score-note">Oxirgi 7 kunlik natijalaringiz.</div></div><div class="sub" style="text-align:center">Keyingi soʻzgacha: <b id="nx"></b></div>'}
+$("app").innerHTML=h}
+function say(m){msg=m;render()}
+function nxt(){buf="";msg="";if(fin()){S.end=Date.now();var s=st();if(MODE==="f")finishFree(s);else{H[DAY]={s:s.total,t:s.ms,k:s.ok,n:N*R};ss("hft_h",H);sync()}}save();render()}
+function submit(){var i=S.rs.length,p=Math.floor(i/N),c=i%N,w=buf.toLowerCase();
+if(w.length<p+1)return say("Soʻz kamida "+(p+1)+" harfdan iborat boʻlsin");
+if(w[p]!==T[c].toLowerCase())return say((p+1)+"-harf "+T[c]+" boʻlishi kerak");
+if(!WORDS.has(w))return say("Bu soʻz roʻyxatda yoʻq");
+if(S.rs.some(function(r){return r.w===w}))return say("Bu soʻzni ishlatgansiz");
+S.rs.push({w:w,p:10+w.length});sfx("good");nxt()}
+function key(k){if(!S.t0||fin())return;
+if(k==="Enter")return submit();
+if(k==="Backspace"){buf=buf.slice(0,-1);msg="";return render()}
+if(/^[a-z]$/i.test(k)&&buf.length<14){sfx("tap");buf+=k.toUpperCase();msg="";render()}}
+document.addEventListener("keydown",function(e){if(e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==="Enter"||e.key==="Backspace"||/^[a-z]$/i.test(e.key)){e.preventDefault();key(e.key)}});
+document.addEventListener("click",function(e){var b=e.target.closest("[data-k],[data-a]");if(!b)return;
+if(b.dataset.k)return key(b.dataset.k);
+var a=b.dataset.a;if(a==="tab"){lbTab=b.dataset.v;render();return}
+if(a==="fr"){sfx("start");newFree();render();window.scrollTo(0,0);return}
+if(a==="acc"){sfx("start");S.t0=Date.now();save();render();return}
+if(a==="rep"){sfx("start");newFree(S.w,S.ch,S.chp);render();window.scrollTo(0,0);return}
+if(a==="home"){setMode("d");render();window.scrollTo(0,0);return}
+if(a==="quit"){ask("Oʻyinni bekor qilasizmi?",function(){SF=null;ss("hft_f",null);setMode("d");render();window.scrollTo(0,0)});return}
+if(a==="sh"){if(S.rec)shareCh(S.rec,chText(S.rec,S.ch));return}
+if(a==="shb"){if(P.best)shareCh(P.best,chText(P.best,null));return}
+if(a==="sound"){soundOn=!soundOn;ss("hft_sound",soundOn);if(soundOn)sfx("tap");render();return}
+if(a==="go"){sfx("start");S.t0=Date.now();save();render()}
+if(a==="skip"){sfx("skip");S.rs.push({w:null,p:0});nxt()}
+if(a==="cp"){var t=shareText()+"\n"+link();
+var ok=function(){b.textContent="Nusxa olindi ✓"};
+try{navigator.clipboard.writeText(t).then(ok,fb)}catch(x){fb()}
+function fb(){var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");ok()}catch(x){}document.body.removeChild(ta)}}});
+setInterval(function(){var e=$("tm");if(e&&S.t0&&!fin())e.textContent=fmt(Date.now()-S.t0);
+var c=$("nx");if(c){var n=new Date(),d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)-n,s=Math.floor(d/1000);c.textContent=Math.floor(s/3600)+":"+("0"+Math.floor(s%3600/60)).slice(-2)+":"+("0"+s%60).slice(-2)}},500);
+initMode();render();sync()})();
+</script></body></html>
+
