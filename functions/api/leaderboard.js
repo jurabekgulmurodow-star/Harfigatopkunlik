@@ -33,7 +33,21 @@ async function board(request, env) {
       }
     }
   }
-  return J({ day, today: t.results.map(fix), streak: s.results.map(fix), total: a.results.map(fix), me });
+  // Erkin o'yin reytingi (jadval hali yaratilmagan bo'lsa ham qolgan reyting ishlayveradi)
+  let practice = [];
+  try {
+    const pr = await q("SELECT name,best_score AS score,best_ms AS ms,best_ok AS ok,best_word AS word,games,(tg_id=?1) AS you FROM practice ORDER BY best_score DESC,best_ms ASC LIMIT 20", id).all();
+    practice = pr.results.map(fix);
+    if (u && me) {
+      const mine = await q("SELECT best_score,best_ms,best_word,games FROM practice WHERE tg_id=?1", id).first();
+      if (mine) {
+        const rk = await q("SELECT COUNT(*)+1 AS r FROM practice WHERE best_score>?1 OR (best_score=?1 AND best_ms<?2)", mine.best_score, mine.best_ms).first();
+        me.practice = { score: mine.best_score, ms: mine.best_ms, word: mine.best_word, games: mine.games, rank: rk ? rk.r : null };
+      }
+    }
+  } catch (e) { practice = []; }
+
+  return J({ day, today: t.results.map(fix), streak: s.results.map(fix), total: a.results.map(fix), practice, me });
 }
 
 
